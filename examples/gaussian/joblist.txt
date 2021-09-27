@@ -1,0 +1,4 @@
+source $HOME/.bashrc ; source activate adaptive-devel ; python main.py --violate --no-severe --num-steps 5 --num-trials 100000
+source $HOME/.bashrc ; source activate adaptive-devel ; python main.py --violate --no-severe --num-steps 50 --num-trials 100000
+source $HOME/.bashrc ; source activate adaptive-devel ; python main.py --violate --no-severe --num-steps 500 --num-trials 100000
+source $HOME/.bashrc ; source activate adaptive-devel ; python main.py --violate --no-severe --num-steps 5000 --num-trials 10000
