@@ -76,4 +76,3 @@ distributions = {
     'banana': build_banana_distribution(),
     'neal-funnel': build_neal_funnel_distribution()
 }
-

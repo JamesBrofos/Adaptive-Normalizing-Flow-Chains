@@ -1,6 +1,7 @@
 import argparse
 import copy
 import os
+import pickle
 from typing import NamedTuple, Optional, Sequence, Tuple
 
 import matplotlib.pyplot as plt
@@ -10,10 +11,9 @@ import tqdm
 parser = argparse.ArgumentParser(description='Violating stationarity with non-independent adaptations')
 parser.add_argument('--violate', action='store_true', default=True, help='Violatie stationarity')
 parser.add_argument('--no-violate', action='store_false', dest='violate')
-parser.add_argument('--severe', action='store_true', default=True, help='Adaptation with severe violation if non-independent')
-parser.add_argument('--no-severe', action='store_false', dest='severe')
 parser.add_argument('--num-steps', type=int, default=5, help='Number of transition kernel steps')
 parser.add_argument('--num-trials', type=int, default=100000, help='Number of Monte Carlo trials')
+parser.add_argument('--seed', type=int, default=0, help='Pseudo-random number generator seed')
 args = parser.parse_args()
 
 
@@ -150,45 +150,55 @@ class IndependentMetropolisHastings:
         kl_tp = self.target.kl(proposal)
         kl_pt = proposal.kl(self.target)
         info = ChainInfo(acc, kl_tp, kl_pt)
-        return nxt, info
+        return nxt, prop, info
 
 
 def adaptive_stationarity():
+    np.random.seed(args.seed)
+
     target = Norm(1.0, np.log(0.5))
     proposal = Norm(2.0, np.log(5.0))
+    print('initial kl: {:.5f}'.format(target.kl(proposal)))
+
     mh = IndependentMetropolisHastings(target)
     chain = np.zeros([args.num_trials])
+    klpq = np.zeros_like(chain)
+    acc = np.zeros_like(chain)
 
     for i in tqdm.tqdm(range(args.num_trials)):
         state = target.rvs()
         proposal = Norm(2.0, np.log(5.0))
         curr = State(state, target.logpdf(state), proposal.logpdf(state))
         hist = []
+        ap = 0
         for j in range(args.num_steps):
-            nxt, info = mh(curr, proposal)
             if len(hist) >= 1:
-                if args.severe:
-                    proposal.mean = np.exp(hist[-1])
-                    proposal.log_scale = -2*hist[-1]
-                else:
-                    proposal.mean = np.mean(hist)
-                    std = np.std(hist)
-                    if std > 1e-6:
-                        proposal.log_scale = np.log(std)
-                state = nxt.state
-                nxt = State(state, nxt.log_target, proposal.logpdf(state))
+                proposal.mean = np.mean(hist)
+                std = np.std(hist)
+                if std > 1e-6:
+                    proposal.log_scale = np.log(std)
+                s = curr.state
+                curr = State(s, curr.log_target, proposal.logpdf(s))
+            nxt, prop, info = mh(curr, proposal)
             if info.accepted or args.violate:
                 hist.append(copy.deepcopy(curr.state))
+            else:
+                hist.append(copy.deepcopy(prop.state))
             curr = copy.deepcopy(nxt)
-        chain[i] = curr.state
+            ap += int(info.accepted)
 
-    r = np.linspace(-3.0, 10.0, 1000)
-    plt.figure()
-    plt.hist(chain, bins=50, density=True)
-    plt.plot(r, target.pdf(r), '--', label='Target')
-    plt.grid(linestyle=':')
-    plt.ylim((0.0, 0.9))
-    plt.savefig(os.path.join('images', 'adaptive-stationarity-violate-{}-severe-{}-num-steps-{}-num-trials-{}.png'.format(args.violate, args.severe, args.num_steps, args.num_trials)))
+        chain[i] = curr.state
+        klpq[i] = target.kl(proposal)
+        acc[i] = ap / args.num_steps
+
+    id = '-'.join('{}-{}'.format(k, v)
+                  for k, v in vars(args).items()).replace('_', '-')
+    with open(os.path.join('samples', 'samples-{}.pkl'.format(id)), 'wb') as f:
+        pickle.dump({
+            'chain': chain,
+            'klpq': klpq,
+            'acc': acc
+        }, f)
 
 
 if __name__ == '__main__':

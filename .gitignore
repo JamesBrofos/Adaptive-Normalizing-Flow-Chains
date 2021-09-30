@@ -1,3 +1,9 @@
+# Ignore pickle files.
+*.pkl
+
+# Ignore generated image.
+*.png
+
 # Ignore TensorBoard log files.
 logs/
 
