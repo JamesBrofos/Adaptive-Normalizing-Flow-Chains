@@ -1,0 +1,11 @@
+source $HOME/.bashrc ; source activate adaptive-devel ; python adaptive_brownian_bridge_experiment.py --exact
+source $HOME/.bashrc ; source activate adaptive-devel ; python adaptive_brownian_bridge_experiment.py --no-exact
+source $HOME/.bashrc ; source activate adaptive-devel ; python haario_brownian_bridge_experiment.py
+source $HOME/.bashrc ; source activate adaptive-devel ; python langevin_brownian_bridge_experiment.py --precondition --step-size 1e-5
+source $HOME/.bashrc ; source activate adaptive-devel ; python langevin_brownian_bridge_experiment.py --no-precondition --step-size 1e-3
+source $HOME/.bashrc ; source activate adaptive-devel ; python adaptive_experiment.py --target multimodal
+source $HOME/.bashrc ; source activate adaptive-devel ; python haario_experiment.py --target multimodal
+source $HOME/.bashrc ; source activate adaptive-devel ; python langevin_experiment.py --target multimodal
+source $HOME/.bashrc ; source activate adaptive-devel ; python adaptive_experiment.py --target neal-funnel
+source $HOME/.bashrc ; source activate adaptive-devel ; python haario_experiment.py --target neal-funnel
+source $HOME/.bashrc ; source activate adaptive-devel ; python langevin_experiment.py --target neal-funnel
